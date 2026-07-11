@@ -6,4 +6,5 @@ module.exports = {
     speed: false,
     fly: false,
     spider: false,
+    killaura: false,
 };

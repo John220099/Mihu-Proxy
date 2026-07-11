@@ -41,6 +41,7 @@ npm install
 - speed
 - fly
 - spider
+- kilaura
 
 ---
 ## Credits

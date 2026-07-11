@@ -8,6 +8,7 @@ class LocalPlayer {
         this.motionY = 0
         this.motionZ = 0
         this.rotation = {x: 0, y: 0, z: 0}
+        this.Slot = 0
 
         player.on('clientbound', ({name, params}, des) => {
             if (name === 'start_game') {
@@ -34,15 +35,12 @@ class LocalPlayer {
                 this.rotation.z = params.rotation?.z ?? this.rotation.z
             }
 
-            if (name === 'player_hotbar') {
-                this.heldItemSlot = params.selected_slot;
-            } else if (name === 'mob_equipment') {
-                if (params.runtimeEntityId === this.runtimeEntityId) {
-                    this.heldItemSlot = params.selected_slot;
-                }
+            if (name === 'mob_equipment') {
+                this.Slot = params.selected_slot
+            } else if (name === 'player_hotbar') {
+                this.Slot = params.selected_slot
             }
         })
-
     }
 }
 

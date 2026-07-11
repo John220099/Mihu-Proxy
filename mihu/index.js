@@ -1,4 +1,5 @@
 const { Relay } = require('bedrock-protocol')
+const path = require('path')
 const LocalPlayer = require('./entity/localplayer')
 const Commands = require("./commands/toggle");
 const Modules = require('./commands/modules');
@@ -9,6 +10,7 @@ const FastBreak = require('./modules/misc/fastbreak')
 const Speed = require("./modules/movement/speed")
 const Fly = require("./modules/movement/fly")
 const Spider = require("./modules/movement/spider")
+const Killaura = require("./modules/combat/killaura");
 
 const hostip = '0.0.0.0'
 const hostport = 19132
@@ -29,15 +31,18 @@ const relay = new Relay({
         host: ip,
         port: port
     },
-    timeout: 5000
+    timeout: 5000,
+    profilesFolder: path.join(__dirname, './../tokens')
 })
 
 relay.listen()
 
 relay.on('connect', player => {
+    player.setMaxListeners(20);
 
     //data
     const localPlayer = new LocalPlayer(player)
+    const entityplayer = new EntityPlayer(player)
 
     //commands
     const commands = new Commands(player)
@@ -51,6 +56,7 @@ relay.on('connect', player => {
     const speed = new Speed(player, localPlayer)
     const fly = new Fly(player, localPlayer)
     const spider = new Spider(player, localPlayer)
+    const killaura = new Killaura(player, localPlayer, entityplayer)
 
     player.on('serverbound', ({name, params}, des) => {
         if (name === 'player_auth_input') {
