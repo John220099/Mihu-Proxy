@@ -12,6 +12,8 @@
 
 Mihu proxy is a simple utility proxy written in nodejs java-script for minecraft bedrock 1.21.94.
 
+### *I don't recommend using it beause it's mostly broken.*
+
 ---
 ## how to use
 - Install nodejs ```v22.19.0``` is recommended [link](https://nodejs.org/en/download).
