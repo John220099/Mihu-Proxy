@@ -1,4 +1,3 @@
-const LocalPlayer = require("../../entity/LocalPlayer");
 const toggle = require("./../toggle");
 
 class Fullbright {

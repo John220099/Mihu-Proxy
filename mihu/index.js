@@ -1,44 +1,52 @@
 const { Relay } = require('bedrock-protocol')
 const path = require('path')
 const LocalPlayer = require('./entity/localplayer')
+const EntityPlayer = require('./entity/entityplayer')
 const Commands = require("./commands/toggle");
 const Modules = require('./commands/modules');
 const AirJump = require('./modules/movement/airjump')
-const Glide = require('./modules/movement/glide')
 const FullBright = require('./modules/render/fullbright')
 const FastBreak = require('./modules/misc/fastbreak')
-const Speed = require("./modules/movement/speed")
-const Fly = require("./modules/movement/fly")
 const Spider = require("./modules/movement/spider")
 const Killaura = require("./modules/combat/killaura");
+const Antikb = require("./modules/combat/Antikb");
+const Jetpack = require("./modules/movement/jetpack");
+const Fly = require("./modules/movement/fly");
+const Speed = require("./modules/movement/speed");
 
 const hostip = '0.0.0.0'
 const hostport = 19132
 
 const port = 19132
-const ip = 'play.lbsg.net'
+const ip = 'play.cubecraft.net'
 
 const relay = new Relay({
-    version: '1.21.93',
+    version: '1.26.51',
     host: hostip,
     port: hostport,
     maxPlayers: 1,
+    offline: false,
     motd: {
         motd: 'mihu proxy',
         levelName: ip,
     },
     destination: {
         host: ip,
-        port: port
+        port: port,
+        offline: false,
     },
-    timeout: 5000,
     profilesFolder: path.join(__dirname, './../tokens')
 })
 
 relay.listen()
+console.log("Starting proxy...")
+relay.conLog = console.debug
 
 relay.on('connect', player => {
     player.setMaxListeners(20);
+
+    const originalClose = player.close.bind(player)
+    const originalDestroy = player.destroy?.bind(player)
 
     //data
     const localPlayer = new LocalPlayer(player)
@@ -50,19 +58,36 @@ relay.on('connect', player => {
 
     //modules
     const airJump = new AirJump(player, localPlayer)
-    const glide = new Glide(player, localPlayer)
     const fullbright = new FullBright(player, localPlayer)
     const fastbreak = new FastBreak(player, localPlayer)
-    const speed = new Speed(player, localPlayer)
-    const fly = new Fly(player, localPlayer)
     const spider = new Spider(player, localPlayer)
     const killaura = new Killaura(player, localPlayer, entityplayer)
+    const antikb = new Antikb(player)
+    const jetpack = new Jetpack(player, localPlayer)
+    const speed = new Speed(player, localPlayer)
+    const fly = new Fly(player, localPlayer)
 
-    player.on('serverbound', ({name, params}, des) => {
+    player.on('clientbound', ({name, params}, des) => {
+        if (name === 'text') {
+            params.message += `, on ${new Date().toLocaleString()}`
+        }
+
+        if (name === 'disconnect' || name === 'serverbound_data_driven_screen_closed') {
+            des.canceled = true
+        }
+
+        if (name === 'transfer') {
+            params.server_address = hostip
+            params.port = hostport
+            params.reload_world = false
+        }
+    })
+
+    player.on('serverbound', ({name, params}) => {
         if (name === 'player_auth_input') {
             player.queue('text', {
                 type: 'tip',
-                 needs_translation: false,
+                needs_translation: false,
                 source_name: '',
                 xuid: '',
                 platform_chat_id: '',
