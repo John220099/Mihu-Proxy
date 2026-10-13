@@ -1,10 +1,12 @@
-const LocalPlayer = require("../../entity/LocalPlayer");
 const toggle = require("./../toggle");
+const settings = require("./../settings");
 
 class FastBreak {
     constructor(player, localPlayer) {
         this.player = player
         this.localPlayer = localPlayer
+
+        this.speed = settings.fastbreak_speed
 
         player.on('serverbound', ({ name, params }, des) => {
             if (!toggle.fastbreak) {
@@ -27,7 +29,7 @@ class FastBreak {
                     event_id: 'add',
                     particles: false,
                     duration: 360000,
-                    amplifier: 0,
+                    amplifier: this.speed,
                     effect_id: 3 //HASTE
                 })
             }

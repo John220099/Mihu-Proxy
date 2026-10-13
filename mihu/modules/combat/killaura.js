@@ -1,4 +1,5 @@
 const toggle = require("./../toggle")
+const settings = require("./../settings");
 
 class Killaura {
     constructor(player, localPlayer, playerManager) {
@@ -9,18 +10,18 @@ class Killaura {
         this.currentParams = null
 
         //module settings
-        this.cps = 16
-        this.range = 9
+        this.cps = settings.killaura_cps
+        this.range = settings.killaura_range
 
         if (!this.playerManager) {
             return
         }
 
         player.on('serverbound', ({ name, params }) => {
-            if (!toggle.killaura) return
             if (name !== 'player_auth_input') return
-
-            this.currentParams = params
+            if (!toggle.killaura) return
+            const t = this.findClosestPlayer()
+            if (t) console.log("nearest:", t.username, "dist:", this.getDistance(this.localPlayer.position, t.position))
             this.update()
         })
     }
@@ -33,24 +34,19 @@ class Killaura {
     }
 
     findClosestPlayer() {
-        if (!this.playerManager) return null
+        if (!this.playerManager) return null;
+        const selfId = this.localPlayer.runtimeEntityId.toString();
 
-        const allPlayers = this.playerManager.getAllPlayers()
+        let closest = null, min = Infinity;
+        for (const p of this.playerManager.getAllPlayers()) {
+            if (p.runtimeId.toString() === selfId) continue;
+            if (!p.isConfirmed) continue;
+            if (this.playerManager.isPlayerRemoved(p.runtimeId)) continue;
 
-        if (allPlayers.length === 0) return null
-
-        let closest = null
-        let minDistance = Infinity
-
-        for (const targetPlayer of allPlayers) {
-            const distance = this.getDistance(this.localPlayer.position, targetPlayer.position)
-            if (distance < minDistance) {
-                minDistance = distance
-                closest = targetPlayer
-            }
+            const d = this.getDistance(this.localPlayer.position, p.position);
+            if (d < min) { min = d; closest = p; }
         }
-
-        return closest
+        return closest;
     }
 
     canAttack() {
@@ -61,6 +57,11 @@ class Killaura {
     }
 
     attack(target) {
+        const held = {
+            network_id: 0, count: 0, metadata: 0,
+            has_stack_id: false, block_runtime_id: 0,
+            extra: { has_nbt: false, can_place_on: [], can_destroy: [] }
+        };
 
         const params = this.currentParams;
 
@@ -85,43 +86,38 @@ class Killaura {
                     entity_runtime_id: target.runtimeId,
                     action_type: 'attack',
                     hotbar_slot: this.localPlayer.Slot,
-                    held_item: params.held_item ?? {
-                        network_id: 0
-                    },
+                    held_item: this.currentParams?.held_item ?? held,
                     player_pos: this.localPlayer.position,
                     click_pos: {x: 0, y: 0, z: 0}
                 }
             }
         })
+
+        if (toggle.damagetext) {
+            this.player.queue('text', {
+                type: 'system',
+                needs_translation: false,
+                source_name: '',
+                xuid: '',
+                platform_chat_id: '',
+                filtered_message: '',
+                message: `§f${target.username}§r §cEnemy Damaged`
+            })
+        }
     }
 
     update() {
-        const target = this.findClosestPlayer()
+        if (!this.localPlayer.position) return;
 
-        if (!target) {
-            return
-        }
+        const target = this.findClosestPlayer();
+        if (!target) return;
 
-        if (!target.runtimeId) {
-            return
-        }
+        const distance = this.getDistance(this.localPlayer.position, target.position);
+        if (distance > this.range) return;
+        if (!this.canAttack()) return;
 
-        if (!target.position) {
-            return
-        }
-
-        if (!this.canAttack()) {
-            return
-        }
-
-        const distance = this.getDistance(this.localPlayer.position, target.position)
-
-        if (distance > this.range) {
-            return
-        }
-
-        this.attack(target)
-        this.lastAttackTime = Date.now() / 1000
+        this.attack(target);
+        this.lastAttackTime = Date.now() / 1000;
     }
 }
 

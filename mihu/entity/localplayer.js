@@ -8,15 +8,17 @@ class LocalPlayer {
         this.motionY = 0
         this.motionZ = 0
         this.rotation = {x: 0, y: 0, z: 0}
+        this.pitch = 0
+        this.yaw =  0
         this.Slot = 0
 
-        player.on('clientbound', ({name, params}, des) => {
+        player.on('clientbound', ({name, params}) => {
             if (name === 'start_game') {
                 this.runtimeEntityId = BigInt(params.runtime_entity_id ?? 0)
             }
         })
 
-        player.on('serverbound', ({name, params}, des) => {
+        player.on('serverbound', ({name, params}) => {
             if (name === 'player_auth_input') {
                 this.prevPosition.x = this.position.x
                 this.prevPosition.y = this.position.y
@@ -33,6 +35,9 @@ class LocalPlayer {
                 this.rotation.x = params.rotation?.x ?? this.rotation.x
                 this.rotation.y = params.rotation?.y ?? this.rotation.y
                 this.rotation.z = params.rotation?.z ?? this.rotation.z
+
+                this.yaw = params.yaw
+                this.pitch = params.pitch
             }
 
             if (name === 'mob_equipment') {

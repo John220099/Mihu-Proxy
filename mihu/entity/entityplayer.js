@@ -113,6 +113,7 @@ class EntityPlayer {
         this.playersByUniqueId = new Map()
         this.pendingPlayers = new Map()
         this.cleanupInterval = null
+        this.removedPlayers = new Set()
         this.setupPacketListeners()
         this.startCleanup()
     }
@@ -135,8 +136,31 @@ class EntityPlayer {
                 case 'set_actor_data':
                     this.handleSetActorData(params)
                     break
+                case 'remove_entity':
+                    this.handleRemoveEntity(params)
+                    break
             }
         })
+    }
+
+    handleRemoveEntity(params) {
+        const entityId = BigInt(params.entity_id_self ?? 0n).toString()
+        const player = this.players.get(entityId) || this.pendingPlayers.get(entityId)
+        if (player) {
+            this.removedPlayers.add(entityId)
+            this.removePlayer(entityId)
+        }
+    }
+
+    removePlayer(runtimeId) {
+        const player = this.players.get(runtimeId)
+        if (player) {
+            this.players.delete(runtimeId)
+            this.pendingPlayers.delete(runtimeId)
+            if (player.uuid) this.playersByUuid.delete(player.uuid)
+            const uniqueId = player.uniqueId?.toString()
+            if (uniqueId && uniqueId !== '0') this.playersByUniqueId.delete(uniqueId)
+        }
     }
 
     handleAddPlayer(params) {
@@ -317,6 +341,20 @@ class EntityPlayer {
             return confirmed.concat(Array.from(this.pendingPlayers.values()))
         }
         return confirmed
+    }
+
+    isPlayerRemoved(runtimeId) {
+        return this.removedPlayers.has(runtimeId.toString())
+    }
+
+    getValidPlayers() {
+        const valid = []
+        for (const [id, player] of this.players) {
+            if (!this.isPlayerRemoved(id)) {
+                valid.push(player)
+            }
+        }
+        return valid
     }
 
     destroy() {

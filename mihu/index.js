@@ -14,7 +14,7 @@ const Jetpack = require("./modules/movement/jetpack");
 const Fly = require("./modules/movement/fly");
 const Speed = require("./modules/movement/speed");
 
-const hostip = '0.0.0.0'
+const hostip = '127.0.0.1'
 const hostport = 19132
 
 const port = 19132
